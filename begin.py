@@ -79,6 +79,44 @@ class TextModel():
 
         self.text = "".join(all_lines)
 
+    def _get_sentences(self): 
+        """
+            Returns a list containing every sentence present in self.text
+        """
+
+        # replacing every ? and ! with a ., then splitting on every . so we effectifly splitted on every !, ? or .
+        sentences = self.text.replace("?", ".").replace("!", ".").split(".")
+
+        # Spliting on . can leave us with an extra element so we filter this empty element out and return the result.
+        return list(filter(None, sentences))
+
+    def make_sentence_lengths(self):
+        """
+            Gets the length of each sentence and assigns it to the sentences property
+            Length: amount of words in a sentence.
+        """
+
+        sentences = self._get_sentences()
+
+        for sentence in sentences:
+            
+            # Getting all words for the current sentence by splitting on each space.
+            words_in_sentence = sentence.split(" ")
+
+            # Getting the length of all the words in the sentence.
+            sentence_length = len(words_in_sentence)
+
+            # Checking if the sentence_lengths dictionary already contains a entry for the current sentence length.
+            if sentence_length in self.sentence_lengths:
+
+                # Increasing the count of it.
+                self.sentence_lengths[sentence_length] += 1
+
+            else:
+
+                # Setting count to 1.
+                self.sentence_lengths[sentence_length] = 1
+
 tm = TextModel()
 
 test_text = """Dit is een korte zin. Dit is geen korte zin, omdat
@@ -87,3 +125,6 @@ geen vraag, of wel?"""
 
 tm.read_text_from_file('test.txt')
 assert tm.text == test_text
+
+tm.make_sentence_lengths()
+assert tm.sentence_lengths == {16: 1, 5: 1, 6: 1}
