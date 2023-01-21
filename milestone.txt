@@ -1,0 +1,31 @@
+Voor veel van de functies moet er een dictionary komen met hoevaak een bepaalde eigenschap voorkomt.
+
+Ik heb dit gedaan met de functie increment_or_create.
+Deze functie moet een key en een dictionary krijgen als parameters.
+
+De functie kijkt vervolgens of de key (bv een woord) als bestaat in de dictionary.
+Als hij bestaat word het aantal (de value van de entry) geincrement met 1.
+Indien hij nog niet bestaat zal hij toegevoegd worden.
+
+
+Voor het vinden van de stammen heb ik de SnowballStemmer gebruikt.
+Opgemaakt uit het voorbeeld vermoed ik dat die daar ook gebruikt is.
+
+
+Bij meerdere functie waar het aantal keren dat iets voorkomt (bv een woord) word opgehaald
+moeten eerst alle woorden worden opgehaald.
+
+Als ik zelf de keuze had had ik dit niet voor elke functie opnieuw gedaan maar echter 1 keer in het 
+begin van het proccess alleen had ik deze mogelijkheid nu niet helaas.
+
+De clean_string methode doet echter wat er gevraagd van word. Wel is het in realiteit zo 
+dat de verwachte output van bijvoorbeeld make_word_lenghts alleen kan voldoen aan de eisen
+indien je ook ervoor zorgt dat woorden die aan elkaar zitten in de string maar eigenlijk 2 woorden
+zijn los van elkaar behandeld worden, ze zitten dus aan elkaar met een newline char (\n)
+
+Omdit op te lossen heb ik een fucntie toegevoegd get_all_words_sanitized die alle woorden 
+eerst cleaned met de clean_string functie en vervolgens de afhandeling voor de met '\n' aan elkaar geplakte woorden.
+
+Deze get_all_words_sanitized functie word dus overal waar er met woorden gewerkt word uitgevoerd.
+
+

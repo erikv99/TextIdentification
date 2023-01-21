@@ -1,1 +1,4 @@
 Wat betreft eigen eigenschap voor de tekst identificatie heb ik gekozen om te kijken naar het aantal nummers dat gebruikt wordt in de tekst.
+Het zou hier dan gaan om het aantal gebruikte nummers per zin. 
+
+Verder heb ik niet veel toelichting in dit bestand, toelichting is waar nodig te vinden in de comments
