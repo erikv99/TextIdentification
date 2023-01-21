@@ -17,15 +17,6 @@ class TextModel():
         """
             Create an empty TextModel.
         """
-        
-        """
-            From top to bottom:
-            wordCount: Amount of words used in the model (om woorden te tellen)
-            wordLength: Length of the words (om woordlengtes te tellen)
-            stems: stems (om stammen te tellen)
-            sentenceLenghts: lengths of the sentences
-            numericCount: Amount of used numbers (0 - 9) 
-        """
 
         # For keeping track of word count per sentence occurences
         self.words = {}
