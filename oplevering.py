@@ -2,6 +2,7 @@
 #
 # Naam: Erik V
 
+from heapq import merge
 from os.path import exists
 import string
 import nltk
@@ -19,7 +20,7 @@ class TextModel():
         """
 
         # For keeping track of word count per sentence occurences
-        self.words = {}
+        self.woawwards = {}
 
         # For keeping track of word length occurences
         self.word_lengths = {}
@@ -30,8 +31,9 @@ class TextModel():
         # For keeping track of sentence length occurences
         self.sentence_lengths = {}
 
-        # Amount of numbers
-        self.numeric_count = {}
+        # Physical length of a line on a screen on page in a book for example.
+        # further explanation found in the make_physical_line_lengths.
+        self.physical_line_lengths = {}
 
     def __repr__(self):
         """
@@ -42,7 +44,7 @@ class TextModel():
         representation += 'Length of words:\n' + str(self.word_lengths) + '\n\n'
         representation += 'Stems:\n' + str(self.stems) + '\n\n'
         representation += 'Sentence lengths:\n' + str(self.sentence_lengths) + '\n\n'
-        representation += 'Amount of used numbers:\n' + str(self.numeric_count)
+        representation += 'Physical line lengths:\n' + str(self.physical_line_lengths)
         return representation
 
     def read_text_from_file(self, filename):
@@ -84,6 +86,12 @@ class TextModel():
         # Spliting on . can leave us with an extra element so we filter this empty element out and return the result.
         return list(filter(None, sentences))
 
+    def remove_new_(self): 
+        """
+            Returns a list containing every sentence present in self.text
+            Each sentence is clean.
+        """
+
     def increment_or_create(self, dir, key):
         """
             Tries to increment the amount for the given key, if not found adds it with the count 1
@@ -101,8 +109,7 @@ class TextModel():
 
     def make_sentence_lengths(self):
         """
-            Gets the length of each sentence and assigns it to the sentences property
-            Length: amount of words in a sentence.
+            Gets the length of each sentence and assigns it to self.sentence_lengths
         """
 
         sentences = self.get_sentences()
@@ -123,7 +130,7 @@ class TextModel():
 
     def clean_string(self, s):
         """
-            Makes given string lowercase and removes and punctuations
+            Makes given string lowercase and removes and punctuations before returning it.
         """
         
         # Making word lowercase and using translate to remove any punctuation.
@@ -131,7 +138,7 @@ class TextModel():
 
     def get_all_words(self):
         """
-            Will return all words stored in self.text
+            Will return all words stored in self.text as a list.
         """
 
         # Returning all words by splitting on any space, removing any empty elements in the result.
@@ -191,7 +198,6 @@ class TextModel():
     def make_words(self):
         """
             Returns a dictionary containing every word and how many times they were present in the text
-            arg words: dictionary of words and the amount of times they were found.
             Assigns output to self.words
         """
 
@@ -223,6 +229,70 @@ class TextModel():
 
         self.stems = stems
 
+    def make_physical_line_lengths(self):
+        """
+            Fills the self.physical_line_lengths dictionary with the 
+            length of each line of text as it would appear fysically on the screen or in a printed book.
+
+            This means its a total of all charachters including the spaces. 
+
+            How long the writer makes lines of text look for the reader may reavel personal preferences in this.
+
+
+            Assigns output to self.physical_line_lengths
+        """
+
+        # Since we need the length of the line appearence we want text including punctucations.
+        # We do this by splitting self.text on every new line char. 
+        lines = self.text.splitlines()
+
+        physical_line_lengths = {}
+
+        # Now we just repeat like we done many times in previous functions.
+
+        # 1 loop trough the entries.
+        for line in lines:
+
+            # 2 perform logic specific to this function to get the data.
+            line_length = len(line)
+
+            # 3 add it as a new entry in the dic with value 1 (we got just one right here since its the first)
+            # OR
+            # Update if there is a existing entry for the value by increasing it by one.
+            physical_line_lengths = self.increment_or_create(physical_line_lengths, line_length)
+        
+        self.physical_line_lengths = physical_line_lengths
+
+    def normalize_dictionary(self, d):
+        """
+            Normalizes the values of a given dictionary.
+        """
+
+        normalized_dictionary = {}
+        
+        # Getting the total
+        total = sum(d.values())
+
+        # looping over each kv entry
+        for key, value in d.items():
+            
+            # Getting the new normalised value
+            normalized_value = 1 / total * value
+
+            # Adding it to the normalised dictionary
+            normalized_dictionary[key] = normalized_value
+
+        return normalized_dictionary
+
+    def smallest_value(self, nd1, nd2):
+        """
+            Returns the smallest number positive value found in the combined data of both dictionaries.
+        """
+
+        # 1. Merging the values of boths dicts in to a generator using the merge function.
+        # 2. Converting the generator to a list using list comprehension.
+        # 3. Returning the lowest values of this just created list.
+        return min([value for value in merge(nd1.values(), nd2.values())])
 
 tm = TextModel()
 
@@ -259,3 +329,37 @@ assert tm.stems == {
   'omdat': 1, 'dez': 1, 'mer': 1, 'dan': 1, '10': 1, 'woord': 1,
   'en': 1, 'getal': 1, 'bevat': 1, 'vrag': 1, 'of': 1, 'wel': 1
 }
+
+assert tm.smallest_value({'a': 0.625, 'b': 0.125, 'c': 0.25}, {'a': 0.9375, 'd': 0.0625}) == 0.0625
+
+tm = TextModel()
+d1 = {'a': 5, 'b': 1, 'c': 2}
+nd1 = tm.normalize_dictionary(d1)
+d2 = {'a': 15, 'd': 1}
+nd2 = tm.normalize_dictionary(d2)
+assert nd1 == {'a': 0.625, 'b': 0.125, 'c': 0.25}
+assert nd2 == {'a': 0.9375, 'd': 0.0625}
+assert tm.smallest_value(nd1, nd2) == 0.0625
+
+
+# zet de tekst tussen de triple quotes in een bestand genaamd test.txt
+# test_text = """Dit is een korte zin. Dit is geen korte zin, omdat
+# deze zin meer dan 10 woorden en een getal bevat! Dit is
+# geen vraag, of wel?"""
+
+# tm = TextModel()
+# tm.read_text_from_file('test.txt')
+# assert tm.text == test_text
+
+# # maak alle dictionary's
+# tm.make_sentence_lengths()
+# tm.make_word_lengths()
+# tm.make_words()
+# tm.make_stems()
+# tm.make_physical_line_lengths()
+
+# # alle dictionary's bekijken!
+# print('Het model bevat deze dictionary\'s:')
+# print(tm)
+
+
