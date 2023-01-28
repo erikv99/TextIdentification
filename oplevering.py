@@ -335,8 +335,7 @@ class TextModel():
             # If char (key) is found in the normalized items we use that value to calculate how much we add to the total
             if key in nd.keys():
                 
-                temp = nd.get(key)
-                total += value * math.log2(temp)
+                total += value * math.log2(nd.get(key))
 
             # If not we increase the total by the value of epsilon
             else:
