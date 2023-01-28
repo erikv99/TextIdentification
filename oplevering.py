@@ -6,6 +6,7 @@ from heapq import merge
 from os.path import exists
 import string
 import nltk
+import math
 from nltk.stem.snowball import SnowballStemmer
 
 class TextModel():
@@ -156,6 +157,7 @@ class TextModel():
             if ("\n" in word):
 
                 for splitted_word in word.split("\n"):
+
                     clean_words.append(splitted_word)
 
             else:
@@ -294,7 +296,116 @@ class TextModel():
         # 3. Returning the lowest values of this just created list.
         return min([value for value in merge(nd1.values(), nd2.values())])
 
+    # def add_or_update_if_lower(self, result_dictionary, input_dictionary):
+    #     """
+    #         Tries to add all items from the input dictionary to the result dictionary.
+    #         if key is found in both it will keep the one with the lowest value.
+    #     """
+
+    #     for key, val in input_dictionary.items():
+        
+    #         # if key is already in our result and it is lower then this one we wont replace it.
+    #         if key in result_dictionary:
+    #             if (result_dictionary.get(key) < val): 
+    #                 continue
+
+    #         result_dictionary[key] = val
+
+    #     return result_dictionary
+
+    # def merge_dict_on_lowest_value(self, d1, d2):
+    #     """
+    #         Merges 2 dictionaries, if key is found in both dictionaries it will keep the lowest.
+    #     """
+
+    #     result = {}
+    #     result = self.add_or_update_if_lower(result, d1)
+    #     return self.add_or_update_if_lower(result, d2)
+
+    def get_dictionary_log_probability(self, d, nd, epsilon):
+        """
+            returns the log probability of d in nd
+        """
+
+        total = 0.0 
+
+        # Looping through each key value pair in d
+        for key, value in d.items():
+            
+            # If char (key) is found in the normalized items we use that value to calculate how much we add to the total
+            if key in nd.keys():
+                
+                temp = nd.get(key)
+                total += value * math.log2(temp)
+
+            # If not we increase the total by the value of epsilon
+            else:
+
+                total += value * math.log2(epsilon)
+
+        return total
+
+    def compare_dictionaries(self, d, nd1, nd2):
+        """
+            Why someone decided to name this compare_dictonaries but do no comparing is beyond my comprehension.
+            
+            Input requirements:
+            args nd1, nd2: must be normalised
+            arg d: must NOT be normalised
+        """
+
+        # Getting our epsilon value
+        epsilon = self.smallest_value(nd1, nd2) / 2
+
+        # Returning a list containing the probability of for both normalized dictionaries
+        return [self.get_dictionary_log_probability(d, nd1, epsilon), self.get_dictionary_log_probability(d, nd2, epsilon)]
+
+    def create_all_dictionaries(self):
+        """
+            Creates and assigns all dictionaries.
+        """
+
+        self.make_sentence_lengths()
+        self.make_word_lengths()
+        self.make_words()
+        self.make_stems()
+        self.make_physical_line_lengths()
+
+print(' +++++++++++ Model 1 +++++++++++ ')
+tm1 = TextModel()
+tm1.read_text_from_file('train1.txt')
+tm1.create_all_dictionaries()  # deze is hierboven gegeven
+print(tm1)
+
+print(' +++++++++++ Model 2+++++++++++ ')
+tm2 = TextModel()
+tm2.read_text_from_file('train2.txt')
+tm2.create_all_dictionaries()  # deze is hierboven gegeven
+print(tm2)
+
+
+print(' +++++++++++ Onbekende tekst +++++++++++ ')
+tm_unknown = TextModel()
+tm_unknown.read_text_from_file('unknown.txt')
+tm_unknown.create_all_dictionaries()  # deze is hierboven gegeven
+print(tm_unknown)
+
 tm = TextModel()
+
+d = {'a': 2, 'b': 1, 'c': 1, 'd': 1, 'e': 1}
+d1 = {'a': 5, 'b': 1, 'c': 2}
+d2 = {'a': 15, 'd': 1}
+
+nd1 = tm.normalize_dictionary(d1)
+nd2 = tm.normalize_dictionary(d2)
+
+assert nd1 == {'a': 0.625, 'b': 0.125, 'c': 0.25}
+assert nd2 == {'a': 0.9375, 'd': 0.0625}
+
+list_of_log_probs = tm.compare_dictionaries(d, nd1, nd2)
+
+assert list_of_log_probs[0] == -16.356143810225277
+assert list_of_log_probs[1] == -19.18621880878296
 
 test_text = """Dit is een korte zin. Dit is geen korte zin, omdat
 deze zin meer dan 10 woorden en een getal bevat! Dit is
@@ -332,13 +443,15 @@ assert tm.stems == {
 
 assert tm.smallest_value({'a': 0.625, 'b': 0.125, 'c': 0.25}, {'a': 0.9375, 'd': 0.0625}) == 0.0625
 
-tm = TextModel()
 d1 = {'a': 5, 'b': 1, 'c': 2}
-nd1 = tm.normalize_dictionary(d1)
 d2 = {'a': 15, 'd': 1}
+
+nd1 = tm.normalize_dictionary(d1)
 nd2 = tm.normalize_dictionary(d2)
+
 assert nd1 == {'a': 0.625, 'b': 0.125, 'c': 0.25}
 assert nd2 == {'a': 0.9375, 'd': 0.0625}
+
 assert tm.smallest_value(nd1, nd2) == 0.0625
 
 
