@@ -8,6 +8,7 @@ import string
 import nltk
 import math
 from nltk.stem.snowball import SnowballStemmer
+from tabulate import tabulate
 
 class TextModel():
     """A class supporting complex models of text."""
@@ -21,7 +22,7 @@ class TextModel():
         """
 
         # For keeping track of word count per sentence occurences
-        self.woawwards = {}
+        self.words = {}
 
         # For keeping track of word length occurences
         self.word_lengths = {}
@@ -32,9 +33,8 @@ class TextModel():
         # For keeping track of sentence length occurences
         self.sentence_lengths = {}
 
-        # Physical length of a line on a screen on page in a book for example.
-        # further explanation found in the make_physical_line_lengths.
-        self.physical_line_lengths = {}
+        # Amount of punctuations 
+        self.punctuations = {}
 
     def __repr__(self):
         """
@@ -43,9 +43,9 @@ class TextModel():
         
         representation = 'Amount of words:\n' + str(self.words) + '\n\n'
         representation += 'Length of words:\n' + str(self.word_lengths) + '\n\n'
-        representation += 'Stems:\n' + str(self.stems) + '\n\n'
+        representation += 'stems:\n' + str(self.stems) + '\n\n'
         representation += 'Sentence lengths:\n' + str(self.sentence_lengths) + '\n\n'
-        representation += 'Physical line lengths:\n' + str(self.physical_line_lengths)
+        representation += 'punctuations:\n' + str(self.punctuations)
         return representation
 
     def read_text_from_file(self, filename):
@@ -86,12 +86,6 @@ class TextModel():
 
         # Spliting on . can leave us with an extra element so we filter this empty element out and return the result.
         return list(filter(None, sentences))
-
-    def remove_new_(self): 
-        """
-            Returns a list containing every sentence present in self.text
-            Each sentence is clean.
-        """
 
     def increment_or_create(self, dir, key):
         """
@@ -231,39 +225,22 @@ class TextModel():
 
         self.stems = stems
 
-    def make_physical_line_lengths(self):
+    def make_punctuations(self):
         """
-            Fills the self.physical_line_lengths dictionary with the 
-            length of each line of text as it would appear fysically on the screen or in a printed book.
-
-            This means its a total of all charachters including the spaces. 
-
-            How long the writer makes lines of text look for the reader may reavel personal preferences in this.
-
-
-            Assigns output to self.physical_line_lengths
+            Fills the self.punctuations dictionary with the punctuations used throughout the text.
         """
 
-        # Since we need the length of the line appearence we want text including punctucations.
-        # We do this by splitting self.text on every new line char. 
-        lines = self.text.splitlines()
+        result = {}
 
-        physical_line_lengths = {}
+        # Looping through every char in the text
+        for char in self.text:
 
-        # Now we just repeat like we done many times in previous functions.
+            # If current char is punctuation we add or increment it in our result dict
+            if char in string.punctuation:
 
-        # 1 loop trough the entries.
-        for line in lines:
+                result = self.increment_or_create(result, char)
 
-            # 2 perform logic specific to this function to get the data.
-            line_length = len(line)
-
-            # 3 add it as a new entry in the dic with value 1 (we got just one right here since its the first)
-            # OR
-            # Update if there is a existing entry for the value by increasing it by one.
-            physical_line_lengths = self.increment_or_create(physical_line_lengths, line_length)
-        
-        self.physical_line_lengths = physical_line_lengths
+        self.punctuations = result
 
     def normalize_dictionary(self, d):
         """
@@ -346,8 +323,6 @@ class TextModel():
 
     def compare_dictionaries(self, d, nd1, nd2):
         """
-            Why someone decided to name this compare_dictonaries but do no comparing is beyond my comprehension.
-            
             Input requirements:
             args nd1, nd2: must be normalised
             arg d: must NOT be normalised
@@ -368,7 +343,160 @@ class TextModel():
         self.make_word_lengths()
         self.make_words()
         self.make_stems()
-        self.make_physical_line_lengths()
+        self.make_punctuations()
+
+    def all_properties_have_been_created(self, model): 
+        """
+            Checks if the .create_all_dictionaries() has been called.
+        """
+
+        # We can just check if model.words has any entries.
+        return len(model.words) > 0
+
+    def round_result_lists(self, result_list):
+        """
+            Rounds a list containing one or more float's
+        """
+
+        return [round(num, 2) for num in result_list]
+
+    def get_points_for_property(self, property):
+        """
+            Takes a list for arg property containing 2 result numbers.
+            Will return amount of gained points for each in the same order as a list.
+        """
+
+        # Draw == both get 1 point
+        if property[0] == property[1]:
+            return [1, 1]
+
+        # model 2 property < model 1 property == model1 gets a point, model2 does not
+        if property[0] < property[1]:
+            return [1, 0]
+
+        # if its the otherway around model 2 gets a point and model1 does not.
+        else:
+            return [0, 1]
+
+    def get_comparison_result(self, comparison_result_dto):
+        """
+            Compares the results of the comparison and returns a total of how many points each model won (properties in which they had the lowest value)
+        """
+
+        model1_points = 0
+        model2_points = 0
+
+        # Getting the points for both mdoels for each property
+        results = [
+            self.get_points_for_property(comparison_result_dto.words),
+            self.get_points_for_property(comparison_result_dto.word_lengths),
+            self.get_points_for_property(comparison_result_dto.sentence_lengths),
+            self.get_points_for_property(comparison_result_dto.stems),
+            self.get_points_for_property(comparison_result_dto.punctuations)]
+
+        for result in results:
+
+            # Assigning model 1 and 2 points to the total for each.
+            model1_points += result[0]
+            model2_points += result[1]
+
+        # returning the result
+        return {"model1": model1_points, "model2": model2_points}
+
+    def print_comparison_result(self, comparison_result_dto, comparison_result):
+        """
+            Prints the comparison results to the console
+        """
+
+        print("Comparison results:\n\n")
+        print(tabulate(
+            [
+                ["words", comparison_result_dto.words[0], comparison_result_dto.words[1]],
+                ["word_lengths", comparison_result_dto.word_lengths[0], comparison_result_dto.word_lengths[1]],
+                ["sentence_lengths", comparison_result_dto.sentence_lengths[0], comparison_result_dto.sentence_lengths[1]],
+                ["stems", comparison_result_dto.stems[0], comparison_result_dto.stems[1]],
+                ["punctuation", comparison_result_dto.punctuations[0], comparison_result_dto.punctuations[1]]
+            ], 
+            headers=["Property", "Model 1", "Model 2"]))
+
+        print("--> Model 1 wins on {} features".format(comparison_result["model1"]))
+        print("--> Model 2 wins on {} features".format(comparison_result["model2"]))
+
+        #TODO
+        //
+
+    def compare_text_with_two_models(self, model1, model2):
+        """
+            Compares the properties of this object (self) with the coresponding properties in model1 and model2
+        """
+
+        # checking if dictionaries have been created for each model, if not creating it.
+        if not self.all_properties_have_been_created(self):
+            self.create_all_dictionaries()
+
+        if not self.all_properties_have_been_created(model1):
+            model1.create_all_dictionaries()
+
+        if not self.all_properties_have_been_created(model1):
+            model2.create_all_dictionaries()
+
+        # Creating a data transfer object for the result data and filling it.
+        comparison_result_dto = ModelComparisonResultDto(
+
+            self.round_result_lists(
+                self.compare_dictionaries(
+                    self.words, 
+                    self.normalize_dictionary(model1.words), 
+                    self.normalize_dictionary(model2.words))),
+
+            self.round_result_lists(
+                self.compare_dictionaries(
+                    self.word_lengths, 
+                    self.normalize_dictionary(model1.word_lengths), 
+                    self.normalize_dictionary(model2.word_lengths))),
+
+            self.round_result_lists(
+                self.compare_dictionaries(
+                    self.sentence_lengths, 
+                    self.normalize_dictionary(model1.sentence_lengths), 
+                    self.normalize_dictionary(model2.sentence_lengths))),
+
+            self.round_result_lists(
+                self.compare_dictionaries(
+                    self.stems, 
+                    self.normalize_dictionary(model1.stems), 
+                    self.normalize_dictionary(model2.stems))),
+
+            self.round_result_lists(
+                self.compare_dictionaries(
+                    self.punctuations, 
+                    self.normalize_dictionary(model1.punctuations), 
+                    self.normalize_dictionary(model2.punctuations)))
+        )
+
+        # Getting and finally printing the results of our findings.
+        comparison_result = self.get_comparison_result(comparison_result_dto)
+        self.print_comparison_result(comparison_result_dto, comparison_result)
+
+# Would normally have done this (and some other stuff as well)
+class ModelComparisonResultDto():
+    
+    def __init__(self):
+
+        self.words = {}
+        self.word_lengths = {}
+        self.sentence_lengths = {}
+        self.stems = {}
+        self.punctuations = {}
+    
+    # overloaded constructor for ease of creation
+    def __init__(self, words, word_lengths, sentence_lengths, stems, punctuations):
+
+        self.words = words
+        self.word_lengths = word_lengths
+        self.sentence_lengths = sentence_lengths
+        self.stems = stems
+        self.punctuations = punctuations
 
 print(' +++++++++++ Model 1 +++++++++++ ')
 tm1 = TextModel()
@@ -390,6 +518,8 @@ tm_unknown.create_all_dictionaries()  # deze is hierboven gegeven
 print(tm_unknown)
 
 tm = TextModel()
+
+tm_unknown.compare_text_with_two_models(tm1, tm2)
 
 d = {'a': 2, 'b': 1, 'c': 1, 'd': 1, 'e': 1}
 d1 = {'a': 5, 'b': 1, 'c': 2}
