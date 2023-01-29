@@ -1,3 +1,10 @@
 verandering eigen eigenschap. 
 
-functie keuzes toelichten
+In eerste instantie had ik als eigen eigenschap bedacht om de lengte van zinnen zoals ze op Het
+scherm of boek weergegeven zouden worden. Dit kreeg echter niet genoeg resultaten. 
+Er is daarom gekozen met punctuation te gaan. 
+
+Hier en daar zijn extra functies toegevoegd die bepaalde handelingen makkelijker maken of een bepaald proccess beter isoleerd van de rest van de logica.
+
+De meeste keuzes zijn verder toegelicht als comments of code of spreken voor zich zelf.
+Ik probeer zoveel mogelijk code op zo'n manier te schrijven dat het makkelijker te lezen is. 

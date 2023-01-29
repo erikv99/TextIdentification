@@ -63,7 +63,7 @@ class TextModel():
         all_lines = []
 
         # Opening the file with a context manager so we're no longer responsible for closing it.
-        with open(filename) as input_file:
+        with open(filename, encoding='utf-8', errors='ignore') as input_file:
 
             # Reading all lines from the file to a list
             all_lines = input_file.readlines()
@@ -273,32 +273,6 @@ class TextModel():
         # 3. Returning the lowest values of this just created list.
         return min([value for value in merge(nd1.values(), nd2.values())])
 
-    # def add_or_update_if_lower(self, result_dictionary, input_dictionary):
-    #     """
-    #         Tries to add all items from the input dictionary to the result dictionary.
-    #         if key is found in both it will keep the one with the lowest value.
-    #     """
-
-    #     for key, val in input_dictionary.items():
-        
-    #         # if key is already in our result and it is lower then this one we wont replace it.
-    #         if key in result_dictionary:
-    #             if (result_dictionary.get(key) < val): 
-    #                 continue
-
-    #         result_dictionary[key] = val
-
-    #     return result_dictionary
-
-    # def merge_dict_on_lowest_value(self, d1, d2):
-    #     """
-    #         Merges 2 dictionaries, if key is found in both dictionaries it will keep the lowest.
-    #     """
-
-    #     result = {}
-    #     result = self.add_or_update_if_lower(result, d1)
-    #     return self.add_or_update_if_lower(result, d2)
-
     def get_dictionary_log_probability(self, d, nd, epsilon):
         """
             returns the log probability of d in nd
@@ -372,11 +346,11 @@ class TextModel():
 
         # model 2 property < model 1 property == model1 gets a point, model2 does not
         if property[0] < property[1]:
-            return [1, 0]
+            return [0, 1]
 
         # if its the otherway around model 2 gets a point and model1 does not.
         else:
-            return [0, 1]
+            return [1, 0]
 
     def get_comparison_result(self, comparison_result_dto):
         """
@@ -408,8 +382,11 @@ class TextModel():
             Prints the comparison results to the console
         """
 
-        print("Comparison results:\n\n")
-        print(tabulate(
+        print("\nComparison results:\n\n")
+
+        # Using tabulate to nicely format the output
+        print(
+            tabulate(
             [
                 ["words", comparison_result_dto.words[0], comparison_result_dto.words[1]],
                 ["word_lengths", comparison_result_dto.word_lengths[0], comparison_result_dto.word_lengths[1]],
@@ -419,11 +396,19 @@ class TextModel():
             ], 
             headers=["Property", "Model 1", "Model 2"]))
 
-        print("--> Model 1 wins on {} features".format(comparison_result["model1"]))
-        print("--> Model 2 wins on {} features".format(comparison_result["model2"]))
+        model1_result = comparison_result["model1"]
+        model2_result = comparison_result["model2"]
+        print("\n--> Model 1 wins on {} features".format(model1_result))
+        print("--> Model 2 wins on {} features\n".format(model2_result))
 
-        #TODO
-        //
+        if model1_result == model2_result:
+            print("+++++\t\tModel 1 and model 2 both match up evenly\t\t+++++")
+        
+        elif model2_result > model1_result:
+            print("+++++\t\tModel 2 is the best match out of the two\t\t+++++")
+        
+        else:
+            print("+++++\t\tModel 1 is the best match out of the two\t\t+++++")
 
     def compare_text_with_two_models(self, model1, model2):
         """
@@ -443,30 +428,35 @@ class TextModel():
         # Creating a data transfer object for the result data and filling it.
         comparison_result_dto = ModelComparisonResultDto(
 
+            # filling comparison_result_dto.words
             self.round_result_lists(
                 self.compare_dictionaries(
                     self.words, 
                     self.normalize_dictionary(model1.words), 
                     self.normalize_dictionary(model2.words))),
 
+            # filling comparison_result_dto.word_lengths
             self.round_result_lists(
                 self.compare_dictionaries(
                     self.word_lengths, 
                     self.normalize_dictionary(model1.word_lengths), 
                     self.normalize_dictionary(model2.word_lengths))),
 
+            # filling comparison_result_dto.sentence_lengths
             self.round_result_lists(
                 self.compare_dictionaries(
                     self.sentence_lengths, 
                     self.normalize_dictionary(model1.sentence_lengths), 
                     self.normalize_dictionary(model2.sentence_lengths))),
 
+            # filling comparison_result_dto.stems
             self.round_result_lists(
                 self.compare_dictionaries(
                     self.stems, 
                     self.normalize_dictionary(model1.stems), 
                     self.normalize_dictionary(model2.stems))),
 
+            # filling comparison_result_dto.punctuations
             self.round_result_lists(
                 self.compare_dictionaries(
                     self.punctuations, 
@@ -498,29 +488,33 @@ class ModelComparisonResultDto():
         self.stems = stems
         self.punctuations = punctuations
 
+
+# ----------------- MAIN TEST ---------------------
+
 print(' +++++++++++ Model 1 +++++++++++ ')
 tm1 = TextModel()
-tm1.read_text_from_file('train1.txt')
-tm1.create_all_dictionaries()  # deze is hierboven gegeven
+tm1.read_text_from_file('model1training.txt')
+tm1.create_all_dictionaries()
 print(tm1)
 
-print(' +++++++++++ Model 2+++++++++++ ')
+print(' +++++++++++ Model 2 +++++++++++ ')
 tm2 = TextModel()
-tm2.read_text_from_file('train2.txt')
-tm2.create_all_dictionaries()  # deze is hierboven gegeven
+tm2.read_text_from_file('model2training.txt')
+tm2.create_all_dictionaries() 
 print(tm2)
-
 
 print(' +++++++++++ Onbekende tekst +++++++++++ ')
 tm_unknown = TextModel()
-tm_unknown.read_text_from_file('unknown.txt')
-tm_unknown.create_all_dictionaries()  # deze is hierboven gegeven
+tm_unknown.read_text_from_file('testingtext.txt')
+tm_unknown.create_all_dictionaries()
 print(tm_unknown)
 
 tm = TextModel()
-
 tm_unknown.compare_text_with_two_models(tm1, tm2)
 
+# ----------------- ---------- ---------------------
+
+# From here on it is just a range of tests
 d = {'a': 2, 'b': 1, 'c': 1, 'd': 1, 'e': 1}
 d1 = {'a': 5, 'b': 1, 'c': 2}
 d2 = {'a': 15, 'd': 1}
@@ -582,26 +576,3 @@ assert nd1 == {'a': 0.625, 'b': 0.125, 'c': 0.25}
 assert nd2 == {'a': 0.9375, 'd': 0.0625}
 
 assert tm.smallest_value(nd1, nd2) == 0.0625
-
-
-# zet de tekst tussen de triple quotes in een bestand genaamd test.txt
-# test_text = """Dit is een korte zin. Dit is geen korte zin, omdat
-# deze zin meer dan 10 woorden en een getal bevat! Dit is
-# geen vraag, of wel?"""
-
-# tm = TextModel()
-# tm.read_text_from_file('test.txt')
-# assert tm.text == test_text
-
-# # maak alle dictionary's
-# tm.make_sentence_lengths()
-# tm.make_word_lengths()
-# tm.make_words()
-# tm.make_stems()
-# tm.make_physical_line_lengths()
-
-# # alle dictionary's bekijken!
-# print('Het model bevat deze dictionary\'s:')
-# print(tm)
-
-
